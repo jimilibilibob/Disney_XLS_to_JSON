@@ -9,33 +9,9 @@ import os
 import json
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
+from pymongo import MongoClient
 
-# Retroune un fichier json depuis la liste des fichers
-def gendata(jsons):
-    for j in jsons:
-        if 'position' in j.keys():
-            yield {
-                "_index": "disney",
-                "attente":j["attente"],
-                "attraction":j["attraction"],
-                "dateTime":j["dateTime"],
-                "jour":j["jour"],
-                "position":j["position"]
-            }
-        else:
-            yield {
-                "_index": "disney",
-                "attente":j["attente"],
-                "attraction":j["attraction"],
-                "dateTime":j["dateTime"],
-                "jour":j["jour"]
-            }
-        
-def main():
-    # Ouvre la connexion à Elasticsarch
-    es = Elasticsearch()
-    data_json_path = './json/'
-    
+def crudIndex(es):
     print("--- Delete Index ---")
     # Supprime l'index disney et ignore l'erreur lui indiquant que celui-ci n'éxiste pas
     es.indices.delete(index='disney', ignore=[400,404])
@@ -64,6 +40,29 @@ def main():
     print("--- Create Index ---")
     # Création de l'index avec son mapping 
     es.indices.create(index='disney', ignore=400, body=mapping)
+    
+# Retroune un fichier json depuis la liste des fichers
+def gendata(jsons):
+    for j in jsons:
+        if 'position' in j.keys():
+            yield {
+                "_index": "disney",
+                "attente":j["attente"],
+                "attraction":j["attraction"],
+                "dateTime":j["dateTime"],
+                "jour":j["jour"],
+                "position":j["position"]
+            }
+        else:
+            yield {
+                "_index": "disney",
+                "attente":j["attente"],
+                "attraction":j["attraction"],
+                "dateTime":j["dateTime"],
+                "jour":j["jour"]
+            }
+        
+def fromJson(es,data_json_path):
     print('Start import')
     # Parcours tout les fichiers du dossier
     for dirname, dirnames, filenames in os.walk(data_json_path):
@@ -81,7 +80,32 @@ def main():
             print(" Imported ")
             print("----------------")
     print('All data imported !')
-
+    
+def fromMongo(es):
+    index = 0
+    client = MongoClient()
+    db = client.disney
+    disney_len = db.collection.count_documents({})
+    print("Number of documents : " +str(disney_len))
+    cursor_json = db.collection.find({})
+    json_array = []
+    print("--- Importing to Elasticsearch ---")
+    print("Percentage : ")
+    for j in cursor_json :
+        if index*100%(disney_len-1) < 10:
+                print( " - " + str(int(index*100/(disney_len-1))) + "%")
+        index = index + 1 
+        json_array.append(j)
+        if len(json_array) > 20000:
+            helpers.bulk(es, gendata(json_array))
+            json_array = []
+    
+    
 if __name__ == "__main__":
-    main()
+    # Ouvre la connexion à Elasticsarch
+    es = Elasticsearch()
+    data_json_path = './json/'
+    crudIndex(es)
+    #fromJson(es,data_json_path)
+    fromMongo(es)
 

@@ -11,6 +11,7 @@ import os
 from dateutil import tz
 from dateutil import parser
 import re
+from pymongo import MongoClient
 
 
 
@@ -69,10 +70,10 @@ def excel_to_json(data_path, filename, geo_path):
                 dt = parser.parse(row_values[decalage])
                 dt = dt.astimezone(to_zone)
                 jour = day_of_week[dt.weekday()]
-                # parcours la ligne
-                for value_index in range(1, len(row_values)-1) :
-                    # Filtre par rapport à l'heure 
-                    if dt.hour > 8 and dt.hour < 20 :
+                # Filtre par rapport à l'heure 
+                if dt.hour > 8 and dt.hour < 20 :
+                    # parcours la ligne
+                    for value_index in range(1, len(row_values)-decalage) :
                         attente_value = row_values[value_index+decalage]
                         # attribution de la valeur -1 si l'attente n'est pas renseigné 
                         if row_values[value_index+decalage] == "":
@@ -95,7 +96,10 @@ def excel_to_json(data_path, filename, geo_path):
         # Enregistre le document Json
         return waitTime
 
-def main():
+def toJson():
+    client = MongoClient()
+    db = client.test_database
+    db.collection.drop()
     # Chemin d'accès au données
     data_path = './excel/'
     #  Chemin d'écritures des Json 
@@ -112,14 +116,40 @@ def main():
                 print("--------------------------------")
                 print("File " + str(count) +"/"+ str(len(filenames)) + " : ")
                 print(filename)
-                print("Pourcentage : ")
+                print("Percentage : ")
                 json = excel_to_json(data_path, filename, geo_path)
                 if len(json) > 1:
                     save_json(json, filename, data_json_path)
                 print("File converted")    
     print("Data converted ! ") 
+
+def toMongo():
+    client = MongoClient()
+    db = client.disney
+    db.collection.drop()
+    # Chemin d'accès au données
+    data_path = './excel/'
+    # Chemin d'accès au geo.json
+    geo_path = './geo.json'
+    # Parcous l'ensemble des documents de type xlsx
+    for dirname, dirnames, filenames in os.walk(data_path):
+        count = 0
+        for filename in filenames:
+            # vérifie que le fichier soit bien un excel de Disney
+            if 'DisneylandParisMagicKingdom.xlsx' in filename :
+                count=count+1
+                print("--------------------------------")
+                print("File " + str(count) +"/"+ str(len(filenames)) + " : ")
+                print(filename)
+                print("Percentage : ")
+                json = excel_to_json(data_path, filename, geo_path)
+                if len(json) > 1:
+                    db.collection.insert_many(json)
+                print("File converted")    
+    print("Data converted ! ") 
     
 if __name__ == "__main__":
-    main()
+    #toJson()
+    toMongo()
 
             
