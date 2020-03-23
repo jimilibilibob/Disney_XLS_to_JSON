@@ -1,4 +1,4 @@
-# TP Elasicsearch - Disney
+# TP Disney_XLS_to_JSON
 
 ## Utilisation
 Ces scripts permettent de mettre les données du Drive (https://drive.google.com/drive/folders/0B2Nxi2S2JmNmNnMybnRJbGVyVTQ) dans un index
