@@ -62,7 +62,7 @@ def gendata(jsons):
                 "jour":j["jour"]
             }
         
-def fromJson(es,data_json_path):
+def fromFile(es,data_json_path):
     print('Start import')
     # Parcours tout les fichiers du dossier
     for dirname, dirnames, filenames in os.walk(data_json_path):
@@ -106,6 +106,6 @@ if __name__ == "__main__":
     es = Elasticsearch()
     data_json_path = './json/'
     crudIndex(es)
-    #fromJson(es,data_json_path)
+    #fromFile(es,data_json_path)
     fromMongo(es)
 

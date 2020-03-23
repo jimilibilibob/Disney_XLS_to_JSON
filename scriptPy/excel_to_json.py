@@ -96,10 +96,7 @@ def excel_to_json(data_path, filename, geo_path):
         # Enregistre le document Json
         return waitTime
 
-def toJson():
-    client = MongoClient()
-    db = client.test_database
-    db.collection.drop()
+def toFile():
     # Chemin d'accès au données
     data_path = './excel/'
     #  Chemin d'écritures des Json 
@@ -149,7 +146,7 @@ def toMongo():
     print("Data converted ! ") 
     
 if __name__ == "__main__":
-    #toJson()
+    #toFile()
     toMongo()
 
             
