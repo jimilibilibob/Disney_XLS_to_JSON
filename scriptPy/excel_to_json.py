@@ -20,8 +20,8 @@ def save_json(waitTime, filename, data_json_path):
     # Garde le nom du fichier mais transforme le .xlsx en .json
     name = filename.replace(".xlsx", ".json")
     with open(data_json_path+name,"w",encoding="utf-8") as jsonFile :
-    	jsonWaitTime=json.dumps(waitTime, ensure_ascii=False)
-    	jsonFile.write(jsonWaitTime)
+        jsonWaitTime=json.dumps(waitTime, ensure_ascii=False)
+        jsonFile.write(jsonWaitTime)
 
 # La fonction permet de normaliser les noms des attractions
 def normalize(attraction):
@@ -59,7 +59,7 @@ def excel_to_json(data_path, filename, geo_path):
         # par rapport à la colonne.
         if sh.row_values(1)[0] == "" :
             decalage = 1
-        for rownum in range(sh.nrows-1):
+        for rownum in range(1,sh.nrows):
             # Affiche le pourcentage d'avancé
             if rownum*100%(sh.nrows-1) < 10:
                 print( " - " + str(int(rownum*100/(sh.nrows-1))) + "%")
@@ -96,17 +96,14 @@ def excel_to_json(data_path, filename, geo_path):
         # Enregistre le document Json
         return waitTime
 
-def toFile():
-    # Chemin d'accès au données
-    data_path = './excel/'
-    #  Chemin d'écritures des Json 
-    data_json_path = './json/'
-    # Chemin d'accès au geo.json
-    geo_path = './geo.json'
+def toFile(waittime_folder_input_path, waititme_folder_output_path, geo_path):
+    print(waittime_folder_input_path)
     # Parcous l'ensemble des documents de type xlsx
-    for dirname, dirnames, filenames in os.walk(data_path):
+    for dirname, dirnames, filenames in os.walk(os.path.dirname(os.path.realpath(waittime_folder_input_path))): 
         count = 0
+        print(dirname)
         for filename in filenames:
+            print(filename)
             # vérifie que le fichier soit bien un excel de Disney
             if 'DisneylandParisMagicKingdom.xlsx' in filename :
                 count=count+1
@@ -114,22 +111,22 @@ def toFile():
                 print("File " + str(count) +"/"+ str(len(filenames)) + " : ")
                 print(filename)
                 print("Percentage : ")
-                json = excel_to_json(data_path, filename, geo_path)
+                json = excel_to_json(waittime_folder_input_path, filename, geo_path)
                 if len(json) > 1:
-                    save_json(json, filename, data_json_path)
+                    save_json(json, filename, waititme_folder_output_path)
                 print("File converted")    
     print("Data converted ! ") 
 
-def toMongo():
+def toMongo(waittime_folder_input_path, geo_path):
     client = MongoClient()
     db = client.disney
     db.collection.drop()
     # Chemin d'accès au données
-    data_path = './excel/'
+    waittime_folder_input_path = "../data/waitTime_xls/"
     # Chemin d'accès au geo.json
-    geo_path = './geo.json'
+    geo_path = '../data/geo.json'
     # Parcous l'ensemble des documents de type xlsx
-    for dirname, dirnames, filenames in os.walk(data_path):
+    for dirname, dirnames, filenames in os.walk(waittime_folder_input_path):
         count = 0
         for filename in filenames:
             # vérifie que le fichier soit bien un excel de Disney
@@ -139,14 +136,15 @@ def toMongo():
                 print("File " + str(count) +"/"+ str(len(filenames)) + " : ")
                 print(filename)
                 print("Percentage : ")
-                json = excel_to_json(data_path, filename, geo_path)
+                json = excel_to_json(waittime_folder_input_path, filename, geo_path)
                 if len(json) > 1:
                     db.collection.insert_many(json)
                 print("File converted")    
     print("Data converted ! ") 
     
 if __name__ == "__main__":
-    #toFile()
-    toMongo()
-
-            
+    geo_path = "../data/geo.json"
+    waittime_folder_input_path = "../data/waitTime_xls/"
+    waititme_folder_output_path = "../data/waitTime_json/"
+    toFile(waittime_folder_input_path, waititme_folder_output_path, geo_path)
+    #toMongo(waittime_folder_input_path, geo_path)
